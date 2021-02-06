@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"cchampou.me/network"
 	"fmt"
 	"log"
 	"net"
@@ -25,23 +26,13 @@ func main() {
 
 	messages := make(chan Message)
 
-	server, err := net.Listen("tcp", ":6000")
-
-	if err != nil {
-		panic(err)
-	}
-
-	defer server.Close()
+	server := network.CreateServer(6000)
 
 	fmt.Println("Server started on port 6000")
 
 	go func() {
 		for {
-			conn, err := server.Accept()
-
-			if err != nil {
-				panic(err)
-			}
+			conn := network.AcceptConn(server)
 			newConnections <- conn
 		}
 	}()
@@ -52,14 +43,14 @@ func main() {
 			log.Println("Waiting nickname for new client")
 
 			go func(conn net.Conn) {
-				conn.Write([]byte("Welcome to the club\n"))
-				conn.Write([]byte("Choose a nickname :\n"))
+				network.WriteString(conn, "Welcome to the club\n")
+				network.WriteString(conn, "Choose a nickname :\n")
 				reader := bufio.NewReader(conn)
 				data, _, err := reader.ReadLine()
-				nickname := string(data)
 				if err != nil {
 					return
 				}
+				nickname := string(data)
 
 				log.Printf("New client connected %s", nickname)
 				allClients[conn] = nickname
@@ -86,7 +77,7 @@ func main() {
 				go func(conn net.Conn, message Message) {
 					if isTarget(target, allClients[conn], message.Nickname) {
 
-						_, err := conn.Write([]byte(message.Nickname + ": " + message.Message + "\n"))
+						err := network.WriteString(conn, message.Nickname+": "+message.Message+"\n")
 
 						if err != nil {
 							deadConnections <- conn
