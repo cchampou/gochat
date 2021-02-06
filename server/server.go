@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"cchampou.me/network"
+	"cchampou.me/strings"
 	"fmt"
 	"log"
 	"net"
@@ -28,7 +29,7 @@ func main() {
 
 	server := network.CreateServer(6000)
 
-	fmt.Println("Server started on port 6000")
+	fmt.Println(myStrings.ToColor("Server started on port 6000", myStrings.Green))
 
 	go func() {
 		for {
@@ -77,7 +78,7 @@ func main() {
 				go func(conn net.Conn, message Message) {
 					if isTarget(target, allClients[conn], message.Nickname) {
 
-						err := network.WriteString(conn, message.Nickname+": "+message.Message+"\n")
+						err := network.WriteString(conn, myStrings.ToColor(message.Nickname, myStrings.Blue)+": "+message.Message+"\n")
 
 						if err != nil {
 							deadConnections <- conn

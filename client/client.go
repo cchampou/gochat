@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"cchampou.me/network"
 	"fmt"
 	"log"
 	"net"
@@ -15,20 +16,16 @@ func main() {
 	cmd.Stdout = os.Stdout
 	cmd.Run()
 
-	c, err := net.Dial("tcp", ":6000")
-
 	messages := make(chan string)
 
 	inputs := make(chan string)
 
-	if err != nil {
-		log.Fatal(err)
-	}
+	c := network.DialServer(6000)
 
 	go func(c net.Conn) {
 		reader := bufio.NewReader(c)
 		for {
-			data, _ := reader.ReadString('\n')
+			data, err := reader.ReadString('\n')
 			if err != nil {
 				log.Fatal(err)
 				break
@@ -40,7 +37,7 @@ func main() {
 	go func(c net.Conn) {
 		reader := bufio.NewReader(os.Stdin)
 		for {
-			data, _ := reader.ReadString('\n')
+			data, err := reader.ReadString('\n')
 			if err != nil {
 				log.Fatal(err)
 				break

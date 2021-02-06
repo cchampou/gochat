@@ -6,10 +6,21 @@ import (
 	"strconv"
 )
 
-func CreateServer(port int) net.Listener {
+func toServerAddr(port int) string {
 	address := ":" + strconv.Itoa(port)
-	log.Print(address)
-	server, err := net.Listen("tcp", address)
+	return address
+}
+
+func DialServer(port int) net.Conn {
+	c, err := net.Dial("tcp", toServerAddr(port))
+	if err != nil {
+		log.Fatal(err)
+	}
+	return c
+}
+
+func CreateServer(port int) net.Listener {
+	server, err := net.Listen("tcp", toServerAddr(port))
 
 	if err != nil {
 		panic(err)
