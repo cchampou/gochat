@@ -8,6 +8,11 @@ import (
 	"strings"
 )
 
+type Message struct {
+	Nickname string
+	Message  string
+}
+
 func main() {
 
 	clientCount := 0
@@ -18,7 +23,7 @@ func main() {
 
 	deadConnections := make(chan net.Conn)
 
-	messages := make(chan string)
+	messages := make(chan Message)
 
 	server, err := net.Listen("tcp", ":6000")
 
@@ -66,7 +71,7 @@ func main() {
 					if err != nil {
 						break
 					}
-					messages <- fmt.Sprintf("#%s: %s", nickname, data)
+					messages <- Message{nickname, string(data)}
 
 				}
 
@@ -75,16 +80,14 @@ func main() {
 
 		case message := <-messages:
 
-			target := findTarget(message)
+			target := findTarget(message.Message)
 
-			recipient := 0
 			for conn, _ := range allClients {
-				go func(conn net.Conn, message string) {
+				go func(conn net.Conn, message Message) {
+					if isTarget(target, allClients[conn], message.Nickname) {
 
-					if isTarget(target, allClients[conn]) {
+						_, err := conn.Write([]byte(message.Nickname + ": " + message.Message + "\n"))
 
-						_, err := conn.Write([]byte(message + "\n"))
-						recipient += 1
 						if err != nil {
 							deadConnections <- conn
 						}
@@ -92,7 +95,7 @@ func main() {
 
 				}(conn, message)
 			}
-			log.Printf("New message %s", message)
+			log.Printf("New message %s", message.Message)
 		case conn := <-deadConnections:
 			log.Printf("Client %s disconnected", allClients[conn])
 			delete(allClients, conn)
@@ -101,7 +104,10 @@ func main() {
 	}
 }
 
-func isTarget(target string, nickname string) bool {
+func isTarget(target string, nickname string, sender string) bool {
+	if nickname == sender {
+		return false
+	}
 	if target == "" {
 		return true
 	}
