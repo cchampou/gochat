@@ -7,7 +7,7 @@ A simple client/server chat using tcp.
 Run go server with
 
 ```
-go run server.go
+go run server/server.go
 ```
 
 Server will be accepting connections on port 6000
@@ -15,7 +15,7 @@ Server will be accepting connections on port 6000
 Run the client with
 
 ```
-go run client.go
+go run client/client.go
 ```
 
 You can either send public message or target a nickname with `@nickname`.
