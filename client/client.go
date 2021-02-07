@@ -1,50 +1,41 @@
 package main
 
 import (
-	"bufio"
-	"cchampou.me/network"
+	"cchampou.me/customIo"
 	"fmt"
-	"log"
 	"net"
 	"os"
-	"os/exec"
 )
+
+func pushMessages(c net.Conn, messages chan string) {
+	reader := customIo.CreateReader(c)
+	for {
+		data := customIo.ReadLine(reader)
+		messages <- data
+	}
+}
+
+func pushStdin(inputs chan string) {
+	reader := customIo.CreateReader(os.Stdin)
+	for {
+		data := customIo.ReadLine(reader)
+		inputs <- data
+	}
+}
 
 func main() {
 
-	cmd := exec.Command("clear")
-	cmd.Stdout = os.Stdout
-	cmd.Run()
+	customIo.ClearWindow()
 
 	messages := make(chan string)
 
 	inputs := make(chan string)
 
-	c := network.DialServer(6000)
+	c := customIo.DialServer(6000)
 
-	go func(c net.Conn) {
-		reader := bufio.NewReader(c)
-		for {
-			data, err := reader.ReadString('\n')
-			if err != nil {
-				log.Fatal(err)
-				break
-			}
-			messages <- data
-		}
-	}(c)
+	go pushMessages(c, messages)
 
-	go func(c net.Conn) {
-		reader := bufio.NewReader(os.Stdin)
-		for {
-			data, err := reader.ReadString('\n')
-			if err != nil {
-				log.Fatal(err)
-				break
-			}
-			inputs <- data
-		}
-	}(c)
+	go pushStdin(inputs)
 
 	for {
 		select {
@@ -52,10 +43,7 @@ func main() {
 			fmt.Print(message)
 		case input := <-inputs:
 			go func(c net.Conn, input string) {
-				_, err := c.Write([]byte(input))
-				if err != nil {
-					log.Fatal(err)
-				}
+				customIo.WriteString(c, input)
 			}(c, input)
 		}
 	}
